@@ -1,11 +1,11 @@
 // Сансар гар утас худалдаа — өгөгдөл унших давхарга.
 //
-// Одоогоор mock өгөгдлөөр ажиллана. Supabase креденшл (.env.local) орвол
-// доорх TODO хэсгүүдэд бодит query нэмж, нэг дор сэлгэнэ. Дуудлагын талбар
-// (async signature) өөрчлөгдөхгүй тул UI-д нөлөөлөхгүй.
+// Supabase креденшл (.env.local) байвал бодит DB, үгүй бол mock өгөгдөл.
+// Дуудлагын талбар (async signature) ижил тул UI-д нөлөөлөхгүй.
 
 import type { Phone, PaymentMethod, Settings } from "./types";
 import { mockPhones, mockPaymentMethods, mockSettings } from "./mock-data";
+import { createClient } from "./supabase/server";
 
 /** Supabase холболт тохируулагдсан эсэх */
 export const hasSupabase =
@@ -15,7 +15,14 @@ export const hasSupabase =
 /** Зарагдах боломжтой утаснууд (шинээр нэмэгдсэнээс эхэлж). */
 export async function getAvailablePhones(): Promise<Phone[]> {
   if (hasSupabase) {
-    // TODO(Supabase): select * from phones where status='available' order by created_at desc
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("phones")
+      .select("*")
+      .eq("status", "available")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []) as Phone[];
   }
   return mockPhones
     .filter((p) => p.status === "available")
@@ -25,7 +32,14 @@ export async function getAvailablePhones(): Promise<Phone[]> {
 /** Нэг утас id-аар (зарагдсан ч буцааж болно — хуудас өөрөө шийднэ). */
 export async function getPhoneById(id: string): Promise<Phone | null> {
   if (hasSupabase) {
-    // TODO(Supabase): select * from phones where id = :id
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("phones")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw error;
+    return (data as Phone) ?? null;
   }
   return mockPhones.find((p) => p.id === id) ?? null;
 }
@@ -33,17 +47,29 @@ export async function getPhoneById(id: string): Promise<Phone | null> {
 /** Идэвхтэй төлбөрийн аргууд (харагдах дарааллаар). */
 export async function getActivePaymentMethods(): Promise<PaymentMethod[]> {
   if (hasSupabase) {
-    // TODO(Supabase): select * from payment_methods where is_active=true order by sort_order
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("payment_methods")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as PaymentMethod[];
   }
   return mockPaymentMethods
     .filter((m) => m.is_active)
     .sort((a, b) => a.sort_order - b.sort_order);
 }
 
-/** Дэлгүүрийн тохиргоо (key-value). */
+/** Дэлгүүрийн тохиргоо (key-value → объект). */
 export async function getSettings(): Promise<Settings> {
   if (hasSupabase) {
-    // TODO(Supabase): select key, value from settings
+    const supabase = await createClient();
+    const { data, error } = await supabase.from("settings").select("key, value");
+    if (error) throw error;
+    const out: Settings = {};
+    for (const row of data ?? []) out[row.key as string] = (row.value as string) ?? "";
+    return out;
   }
   return mockSettings;
 }
