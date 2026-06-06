@@ -1,4 +1,4 @@
-// Auth session-г сэргээх (token refresh) — Supabase SSR-ийн стандарт хэв маяг.
+// Auth session-г сэргээх + /admin замыг хамгаалах (Supabase SSR хэв маяг).
 
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
@@ -28,7 +28,25 @@ export async function updateSession(request: NextRequest) {
   );
 
   // ВАЖНО: getUser()-г заавал дуудаж токеныг сэргээнэ.
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const path = request.nextUrl.pathname;
+
+  // /admin → зөвхөн нэвтэрсэн хэрэглэгч
+  if (path.startsWith("/admin") && !user) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  // нэвтэрсэн хэрэглэгч /login дээр орвол → /admin
+  if (path === "/login" && user) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/admin";
+    return NextResponse.redirect(url);
+  }
 
   return supabaseResponse;
 }
