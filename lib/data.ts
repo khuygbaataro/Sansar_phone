@@ -32,6 +32,12 @@ export async function getAvailablePhones(): Promise<Phone[]> {
 /** Нэг утас id-аар (зарагдсан ч буцааж болно — хуудас өөрөө шийднэ). */
 export async function getPhoneById(id: string): Promise<Phone | null> {
   if (hasSupabase) {
+    // UUID биш бол шууд "олдсонгүй" — Postgres uuid алдаанаас (500) сэргийлнэ
+    if (
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+    ) {
+      return null;
+    }
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("phones")
