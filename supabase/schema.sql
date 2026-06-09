@@ -12,6 +12,7 @@ create table if not exists public.phones (
   storage     text,                                -- 128GB, 256GB…
   color       text,                                -- өнгө
   condition   text not null default 'used' check (condition in ('new','used')),
+  battery_health int check (battery_health between 0 and 100), -- хуучин утасны батарей % (шинэд null)
   price       integer not null check (price >= 0), -- бэлэн үнэ ₮
   image_url   text,                                -- Supabase Storage-ийн зураг
   description text,                                 -- нэмэлт тайлбар
@@ -37,6 +38,10 @@ create table if not exists public.settings (
   key   text primary key,
   value text
 );
+
+-- Хуучин суулгацад багана нэмэх (idempotent — дахин ажиллуулахад аюулгүй)
+alter table public.phones
+  add column if not exists battery_health int check (battery_health between 0 and 100);
 
 -- ===================== Индекс =====================
 create index if not exists phones_status_idx        on public.phones (status);

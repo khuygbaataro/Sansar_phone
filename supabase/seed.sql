@@ -19,3 +19,32 @@ insert into public.settings (key, value) values
   ('facebook_url', ''),   -- эзнээс авна
   ('logo_url',     '')    -- лого upload хийсний дараа бөглөнө
 on conflict (key) do nothing;
+
+-- ----- iPhone 16 / 16 Plus жишиг нөөц (зураг public/photo-оос) -----
+-- Зөвхөн iPhone 16 урьд нь ороогүй бол нэмнэ (давхардуулахгүй).
+-- color/model нь lib/photos.ts manifest-тэй таарна → вэбэд зураг автоматаар холбогдоно.
+insert into public.phones
+  (brand, model, storage, color, condition, battery_health, price, image_url, status)
+select v.brand, v.model, v.storage, v.color, v.condition, v.battery_health, v.price, v.image_url, 'available'
+from (values
+  ('Apple','iPhone 16','128GB','Хар','new',           null::int, 2990000, '/photo/iphone-16/black.webp'),
+  ('Apple','iPhone 16','256GB','Хар','new',           null,      3290000, '/photo/iphone-16/black.webp'),
+  ('Apple','iPhone 16','128GB','Хар','used',          84,        2450000, '/photo/iphone-16/black.webp'),
+  ('Apple','iPhone 16','128GB','Цагаан','new',        null,      2990000, '/photo/iphone-16/white.webp'),
+  ('Apple','iPhone 16','256GB','Цагаан','used',       91,        2750000, '/photo/iphone-16/white.webp'),
+  ('Apple','iPhone 16','256GB','Ягаан','new',         null,      3290000, '/photo/iphone-16/pink.webp'),
+  ('Apple','iPhone 16','128GB','Ногоон-цэнхэр','new', null,      2990000, '/photo/iphone-16/teal.webp'),
+  ('Apple','iPhone 16','128GB','Ногоон-цэнхэр','used',88,        2500000, '/photo/iphone-16/teal.webp'),
+  ('Apple','iPhone 16','512GB','Хөх','new',           null,      3890000, '/photo/iphone-16/ultramarine.webp'),
+  ('Apple','iPhone 16 Plus','128GB','Хар','new',      null,      3490000, '/photo/iphone-16-plus/black.webp'),
+  ('Apple','iPhone 16 Plus','256GB','Хар','used',     93,        3150000, '/photo/iphone-16-plus/black.webp'),
+  ('Apple','iPhone 16 Plus','256GB','Цагаан','new',   null,      3790000, '/photo/iphone-16-plus/white.webp'),
+  ('Apple','iPhone 16 Plus','128GB','Ягаан','new',    null,      3490000, '/photo/iphone-16-plus/pink.webp'),
+  ('Apple','iPhone 16 Plus','128GB','Ягаан','used',   86,        2990000, '/photo/iphone-16-plus/pink.webp'),
+  ('Apple','iPhone 16 Plus','256GB','Ногоон-цэнхэр','new', null, 3790000, '/photo/iphone-16-plus/teal.webp'),
+  ('Apple','iPhone 16 Plus','128GB','Хөх','new',      null,      3490000, '/photo/iphone-16-plus/ultramarine.webp'),
+  ('Apple','iPhone 16 Plus','512GB','Хөх','used',     90,        3690000, '/photo/iphone-16-plus/ultramarine.webp')
+) as v(brand, model, storage, color, condition, battery_health, price, image_url)
+where not exists (
+  select 1 from public.phones where model in ('iPhone 16','iPhone 16 Plus')
+);

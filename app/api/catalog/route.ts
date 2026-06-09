@@ -35,6 +35,7 @@ export async function GET() {
     storage: p.storage,
     color: p.color,
     condition: p.condition,
+    battery_health: p.battery_health,
     price: p.price,
     image_url: p.image_url,
     description: p.description,

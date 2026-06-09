@@ -12,6 +12,7 @@ export interface Phone {
   storage: string | null;
   color: string | null;
   condition: PhoneCondition;
+  battery_health: number | null; // хуучин утасны батарей % (шинэд null)
   price: number; // бэлэн үнэ ₮
   image_url: string | null;
   description: string | null;
