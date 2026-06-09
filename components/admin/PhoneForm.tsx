@@ -1,9 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Phone } from "@/lib/types";
+import {
+  IPHONE_PHOTOS,
+  getColorImage,
+  getModelColors,
+  hasPhotoModel,
+} from "@/lib/photos";
 
 const field =
   "mt-1 w-full rounded-xl border border-border bg-surface-2 px-3 py-2 outline-none focus:border-accent";
@@ -17,6 +23,8 @@ export function PhoneForm({ phone }: { phone?: Phone }) {
     storage: phone?.storage ?? "",
     color: phone?.color ?? "",
     condition: phone?.condition ?? "new",
+    battery_health:
+      phone?.battery_health != null ? String(phone.battery_health) : "",
     price: phone?.price != null ? String(phone.price) : "",
     description: phone?.description ?? "",
     status: phone?.status ?? "available",
@@ -29,6 +37,25 @@ export function PhoneForm({ phone }: { phone?: Phone }) {
   function set<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
     setForm((f) => ({ ...f, [k]: v }));
   }
+
+  // Apple iPhone (manifest-д зурагтай) бол загвар+өнгөнд тохирох зургийг
+  // АВТОМАТААР холбоно. Гараар upload хийсэн зургийг (✕ /photo биш) дарж бичихгүй.
+  const isAppleModel =
+    form.brand.trim().toLowerCase() === "apple" && hasPhotoModel(form.model);
+  const modelColors = isAppleModel ? getModelColors(form.model) : [];
+
+  useEffect(() => {
+    if (!isAppleModel) return;
+    const auto = getColorImage(form.model, form.color);
+    if (!auto) return;
+    setForm((f) =>
+      f.image_url && !f.image_url.startsWith("/photo/")
+        ? f // гараар оруулсан зураг — хэвээр
+        : f.image_url === auto
+          ? f
+          : { ...f, image_url: auto },
+    );
+  }, [isAppleModel, form.model, form.color]);
 
   async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -62,6 +89,10 @@ export function PhoneForm({ phone }: { phone?: Phone }) {
       storage: form.storage.trim() || null,
       color: form.color.trim() || null,
       condition: form.condition,
+      battery_health:
+        form.condition === "used" && form.battery_health.trim()
+          ? parseInt(form.battery_health, 10)
+          : null,
       price: parseInt(form.price, 10) || 0,
       description: form.description.trim() || null,
       status: form.status,
@@ -96,11 +127,17 @@ export function PhoneForm({ phone }: { phone?: Phone }) {
           <label className={label}>Загвар *</label>
           <input
             required
+            list="iphone-models"
             value={form.model}
             onChange={(e) => set("model", e.target.value)}
             placeholder="iPhone 15 Pro"
             className={field}
           />
+          <datalist id="iphone-models">
+            {Object.values(IPHONE_PHOTOS).map((m) => (
+              <option key={m.modelSlug} value={m.modelName} />
+            ))}
+          </datalist>
         </div>
         <div>
           <label className={label}>Багтаамж</label>
@@ -112,13 +149,35 @@ export function PhoneForm({ phone }: { phone?: Phone }) {
           />
         </div>
         <div>
-          <label className={label}>Өнгө</label>
-          <input
-            value={form.color}
-            onChange={(e) => set("color", e.target.value)}
-            placeholder="Хар"
-            className={field}
-          />
+          <label className={label}>
+            Өнгө
+            {isAppleModel && (
+              <span className="ml-1 text-xs text-accent">
+                · зураг автоматаар холбогдоно
+              </span>
+            )}
+          </label>
+          {isAppleModel ? (
+            <select
+              value={form.color}
+              onChange={(e) => set("color", e.target.value)}
+              className={field}
+            >
+              <option value="">— өнгө сонгох —</option>
+              {modelColors.map((c) => (
+                <option key={c.slug} value={c.nameMn}>
+                  {c.nameMn}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              value={form.color}
+              onChange={(e) => set("color", e.target.value)}
+              placeholder="Хар"
+              className={field}
+            />
+          )}
         </div>
         <div>
           <label className={label}>Нөхцөл</label>
@@ -131,6 +190,20 @@ export function PhoneForm({ phone }: { phone?: Phone }) {
             <option value="used">Хуучин</option>
           </select>
         </div>
+        {form.condition === "used" && (
+          <div>
+            <label className={label}>Батарей (%)</label>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              value={form.battery_health}
+              onChange={(e) => set("battery_health", e.target.value)}
+              placeholder="89"
+              className={field}
+            />
+          </div>
+        )}
         <div>
           <label className={label}>Үнэ (₮) *</label>
           <input

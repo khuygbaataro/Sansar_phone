@@ -2,9 +2,68 @@
 // Supabase холбогдох хүртэл UI-г энэ өгөгдлөөр барина.
 // supabase/seed.sql доторх анхдагч өгөгдөлтэй тохирсон.
 
-import type { Phone, PaymentMethod, Settings } from "./types";
+import type {
+  Phone,
+  PhoneCondition,
+  PaymentMethod,
+  Settings,
+} from "./types";
+import { getColorImage } from "./photos";
+
+// Apple demo нэгж бүтээх товч туслах (brand=Apple, зураг manifest-аас).
+function unit(
+  id: string,
+  model: string,
+  storage: string,
+  color: string,
+  condition: PhoneCondition,
+  battery_health: number | null,
+  price: number,
+  created_at: string,
+): Phone {
+  return {
+    id,
+    brand: "Apple",
+    model,
+    storage,
+    color,
+    condition,
+    battery_health,
+    price,
+    image_url: getColorImage(model, color),
+    description: null,
+    status: "available",
+    created_at,
+  };
+}
+
+// iPhone 16 / 16 Plus demo нэгжүүд — нэг загвар+өнгөнд олон нэгж (өөр storage/battery/үнэ),
+// шинэ + хуучин хосолсон. color/model нэр нь lib/photos.ts manifest-тэй ЯГ таарна
+// (тиймээс зураг автоматаар холбогдоно). image_url-ийг ч parity-д зориулж онооно.
+const iphone16: Phone[] = [
+  // ---- iPhone 16 ----
+  unit("i16-1", "iPhone 16", "128GB", "Хар", "new", null, 2990000, "2026-06-08T10:00:00Z"),
+  unit("i16-2", "iPhone 16", "256GB", "Хар", "new", null, 3290000, "2026-06-08T10:05:00Z"),
+  unit("i16-3", "iPhone 16", "128GB", "Хар", "used", 84, 2450000, "2026-06-07T10:00:00Z"),
+  unit("i16-4", "iPhone 16", "128GB", "Цагаан", "new", null, 2990000, "2026-06-08T11:00:00Z"),
+  unit("i16-5", "iPhone 16", "256GB", "Цагаан", "used", 91, 2750000, "2026-06-07T11:00:00Z"),
+  unit("i16-6", "iPhone 16", "256GB", "Ягаан", "new", null, 3290000, "2026-06-08T12:00:00Z"),
+  unit("i16-7", "iPhone 16", "128GB", "Ногоон-цэнхэр", "new", null, 2990000, "2026-06-08T12:30:00Z"),
+  unit("i16-8", "iPhone 16", "128GB", "Ногоон-цэнхэр", "used", 88, 2500000, "2026-06-07T12:30:00Z"),
+  unit("i16-9", "iPhone 16", "512GB", "Хөх", "new", null, 3890000, "2026-06-08T13:00:00Z"),
+  // ---- iPhone 16 Plus ----
+  unit("i16p-1", "iPhone 16 Plus", "128GB", "Хар", "new", null, 3490000, "2026-06-09T10:00:00Z"),
+  unit("i16p-2", "iPhone 16 Plus", "256GB", "Хар", "used", 93, 3150000, "2026-06-08T10:00:00Z"),
+  unit("i16p-3", "iPhone 16 Plus", "256GB", "Цагаан", "new", null, 3790000, "2026-06-09T10:30:00Z"),
+  unit("i16p-4", "iPhone 16 Plus", "128GB", "Ягаан", "new", null, 3490000, "2026-06-09T11:00:00Z"),
+  unit("i16p-5", "iPhone 16 Plus", "128GB", "Ягаан", "used", 86, 2990000, "2026-06-08T11:00:00Z"),
+  unit("i16p-6", "iPhone 16 Plus", "256GB", "Ногоон-цэнхэр", "new", null, 3790000, "2026-06-09T11:30:00Z"),
+  unit("i16p-7", "iPhone 16 Plus", "128GB", "Хөх", "new", null, 3490000, "2026-06-09T12:00:00Z"),
+  unit("i16p-8", "iPhone 16 Plus", "512GB", "Хөх", "used", 90, 3690000, "2026-06-08T12:00:00Z"),
+];
 
 export const mockPhones: Phone[] = [
+  ...iphone16,
   {
     id: "p1",
     brand: "Apple",
@@ -12,6 +71,7 @@ export const mockPhones: Phone[] = [
     storage: "256GB",
     color: "Байгалийн титан",
     condition: "new",
+    battery_health: null,
     price: 5200000,
     image_url: null,
     description: "ProMotion дэлгэц, A17 Pro процессор, USB-C.",
@@ -25,6 +85,7 @@ export const mockPhones: Phone[] = [
     storage: "128GB",
     color: "Хар",
     condition: "used",
+    battery_health: 89,
     price: 2100000,
     image_url: null,
     description: "Цэвэрхэн ашигласан, батарей 89%.",
@@ -38,6 +99,7 @@ export const mockPhones: Phone[] = [
     storage: "256GB",
     color: "Хар",
     condition: "new",
+    battery_health: null,
     price: 3400000,
     image_url: null,
     description: "Snapdragon 8 Gen 3, 120Hz AMOLED.",
@@ -51,6 +113,7 @@ export const mockPhones: Phone[] = [
     storage: "128GB",
     color: "Цэнхэр",
     condition: "new",
+    battery_health: null,
     price: 1250000,
     image_url: null,
     description: "Дунд зэргийн үнэтэй, чанартай камер.",
@@ -64,6 +127,7 @@ export const mockPhones: Phone[] = [
     storage: "128GB",
     color: "Ногоон",
     condition: "new",
+    battery_health: null,
     price: 850000,
     image_url: null,
     description: "108MP камер, том батарей.",
@@ -77,6 +141,7 @@ export const mockPhones: Phone[] = [
     storage: "256GB",
     color: "Цагаан",
     condition: "new",
+    battery_health: null,
     price: 2600000,
     image_url: null,
     description: "Leica камер, Snapdragon 8 Gen 3.",
@@ -91,6 +156,7 @@ export const mockPhones: Phone[] = [
     storage: "64GB",
     color: "Цагаан",
     condition: "used",
+    battery_health: 82,
     price: 1150000,
     image_url: null,
     description: "Зарагдсан.",

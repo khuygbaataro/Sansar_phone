@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from "react";
 import type { Phone, PaymentMethod } from "@/lib/types";
+import { groupIphoneModels, hasIphoneShowcase } from "@/lib/catalog";
 import { PhoneCard } from "./PhoneCard";
+import { IphoneModelCard } from "./iphone/IphoneModelCard";
 
 export function Catalog({
   phones,
@@ -19,7 +21,8 @@ export function Catalog({
     [phones],
   );
 
-  const filtered = useMemo(() => {
+  // Брэнд + хайлтаар шүүсэн харагдах нэгжүүд.
+  const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return phones.filter((p) => {
       if (brand && p.brand !== brand) return false;
@@ -29,6 +32,15 @@ export function Catalog({
         .includes(needle);
     });
   }, [phones, query, brand]);
+
+  // iPhone-уудыг загвараар бүлэглэх; бусдыг нэг бүрчлэн.
+  const groups = useMemo(() => groupIphoneModels(visible), [visible]);
+  const regular = useMemo(
+    () => visible.filter((p) => !hasIphoneShowcase(p)),
+    [visible],
+  );
+
+  const total = groups.length + regular.length;
 
   return (
     <div>
@@ -50,17 +62,20 @@ export function Catalog({
         ))}
       </div>
 
-      {filtered.length === 0 ? (
+      {total === 0 ? (
         <p className="mt-12 text-center text-muted">Илэрц олдсонгүй.</p>
       ) : (
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {filtered.map((p) => (
+          {groups.map((g) => (
+            <IphoneModelCard key={g.modelSlug} group={g} />
+          ))}
+          {regular.map((p) => (
             <PhoneCard key={p.id} phone={p} methods={methods} />
           ))}
         </div>
       )}
 
-      <p className="mt-4 text-xs text-muted">{filtered.length} утас</p>
+      <p className="mt-4 text-xs text-muted">{total} төрөл</p>
     </div>
   );
 }
